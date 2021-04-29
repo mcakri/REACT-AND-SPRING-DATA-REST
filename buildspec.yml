@@ -1,0 +1,34 @@
+--- 
+phases: 
+  install: 
+    commands: 
+      - "echo Entered the install phase..."
+      - "apt-get update -y"
+      - "apt-get install -y maven"
+    finally: 
+      - "echo This always runs even if the update or install command fails"
+  pre_build: 
+    commands: 
+      - "echo Entered the pre_build phase..."
+      - "aws --version"
+      - "aws ecr get-login-password --region eu-central-1 | docker login --username AWS --password-stdin 372187523720.dkr.ecr.eu-central-1.amazonaws.com"
+      - "REPOSITORY_URI=372187523720.dkr.ecr.eu-central-1.amazonaws.com/rk-ecr"
+    finally: 
+      - "echo This always runs even if the login command fails"
+  build:
+    commands:
+      - "echo Entered the build phase..."
+      - "echo Build started on `date`"
+      - "mvn clean verify"
+      - "docker build -t $REPOSITORY_URI ."
+    finally:
+      - "echo This always runs even if the install command fails"
+  post_build: 
+    commands: 
+      - "echo Entered the post_build phase..."
+      - "echo Pushing the Docker images..."
+      - "docker push $REPOSITORY_URI:latest"
+artifacts: 
+  files: 
+    - imagedefinitions.json
+version: 0.2
